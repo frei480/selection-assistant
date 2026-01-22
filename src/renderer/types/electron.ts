@@ -11,6 +11,7 @@ declare global {
         testConnection: () => Promise<boolean>
         getModels: () => Promise<string[]>
         generateCompletion: (prompt: string) => Promise<string>
+        generateCompletionStream: (prompt: string, callback: (chunk: string) => void) => Promise<void>
       }
       window: {
         openSettings: () => Promise<void>
@@ -18,6 +19,7 @@ declare global {
         minimize: () => Promise<void>
         openResult: (options: any) => Promise<void>
         closeResult: () => Promise<void>
+        updateResult: (result: string) => Promise<void>
       }
       selection: {
         hideToolbar: () => Promise<void>
@@ -26,6 +28,7 @@ declare global {
         processAction: (action: any, isFullScreen?: boolean) => Promise<void>
         onTextSelected: (callback: (data: any) => void) => void
         onToolbarVisibilityChange: (callback: (visible: boolean) => void) => void
+        onUpdateResult: (callback: (result: string) => void) => void
       }
     }
   }

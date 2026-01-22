@@ -5,6 +5,7 @@ import { Copy, ChevronLeft } from 'lucide-react'
 import styled from 'styled-components'
 import type { ResultWindowOptions } from '../shared/types'
 import '../index.css'
+import './types/electron'
 
 const ResultContainer = styled.div`
   display: flex;
@@ -69,11 +70,17 @@ const ResultWindow: React.FC = () => {
   React.useEffect(() => {
     // Get data from query params
     const params = new URLSearchParams(window.location.search)
-    const data = params.get('data')
+    const action = params.get('action')
+    const text = params.get('text')
+    const result = params.get('result')
 
-    if (data) {
+    if (action && text && result) {
       try {
-        const parsed = JSON.parse(decodeURIComponent(data))
+        const parsed = {
+          action: decodeURIComponent(action) as 'explain' | 'summarize' | 'translate',
+          text: decodeURIComponent(text),
+          result: decodeURIComponent(result)
+        }
         setState({ data: parsed, loading: false })
       } catch (error) {
         console.error('Failed to parse result data:', error)
@@ -134,9 +141,9 @@ const ResultWindow: React.FC = () => {
         </Space>
       </div>
 
-      <Card className="content" title="Original Text" size="small">
+      {/* <Card className="content" title="Original Text" size="small">
         <p>{state.data.text}</p>
-      </Card>
+      </Card> */}
 
       <Card className="content" title="Result" size="small">
         <p>{state.data.result}</p>

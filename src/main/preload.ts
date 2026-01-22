@@ -8,8 +8,10 @@ const IpcChannels = {
   LMStudio_TestConnection: 'lmstudio:testConnection',
   LMStudio_GetModels: 'lmstudio:getModels',
   LMStudio_GenerateCompletion: 'lmstudio:generateCompletion',
+  LMStudio_GenerateCompletionStream: 'lmstudio:generateCompletionStream',
   Window_OpenResult: 'window:openResult',
   Window_CloseResult: 'window:closeResult',
+  Window_UpdateResult: 'window:updateResult',
   Selection_TextSelected: 'selection:textSelected',
   Selection_ToolbarHide: 'selection:toolbarHide',
   Selection_WriteToClipboard: 'selection:writeToClipboard',
@@ -36,12 +38,35 @@ const api = {
     getModels: (): Promise<string[]> => ipcRenderer.invoke(IpcChannels.LMStudio_GetModels),
     generateCompletion: (prompt: string): Promise<string> =>
       ipcRenderer.invoke(IpcChannels.LMStudio_GenerateCompletion, prompt),
+    generateCompletionStream: (prompt: string, callback: (chunk: string) => void): Promise<void> => {
+      // Set up listener for streaming chunks
+      const handleChunk = (_: any, chunk: string) => {
+        callback(chunk)
+      }
+      
+      ipcRenderer.on(`${IpcChannels.LMStudio_GenerateCompletionStream}_chunk`, handleChunk)
+      
+      // Start the streaming completion
+      return new Promise((resolve, reject) => {
+        ipcRenderer.invoke(IpcChannels.LMStudio_GenerateCompletionStream, prompt)
+          .then(() => {
+            ipcRenderer.removeListener(`${IpcChannels.LMStudio_GenerateCompletionStream}_chunk`, handleChunk)
+            resolve()
+          })
+          .catch((error) => {
+            ipcRenderer.removeListener(`${IpcChannels.LMStudio_GenerateCompletionStream}_chunk`, handleChunk)
+            reject(error)
+          })
+      })
+    },
   },
   window: {
     openSettings: (): Promise<void> => ipcRenderer.invoke('open-settings'),
     openResult: (options: any): Promise<void> =>
       ipcRenderer.invoke(IpcChannels.Window_OpenResult, options),
     closeResult: (): Promise<void> => ipcRenderer.invoke(IpcChannels.Window_CloseResult),
+    updateResult: (result: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.Window_UpdateResult, result),
     close: (): Promise<void> => ipcRenderer.invoke('close-window'),
     minimize: (): Promise<void> => ipcRenderer.invoke('minimize-window'),
   },
@@ -58,6 +83,9 @@ const api = {
     },
     onToolbarVisibilityChange: (callback: (visible: boolean) => void) => {
       ipcRenderer.on(IpcChannels.Selection_ToolbarVisibilityChange, (_, visible) => callback(visible))
+    },
+    onUpdateResult: (callback: (result: string) => void) => {
+      ipcRenderer.on(IpcChannels.Window_UpdateResult, (_, result) => callback(result))
     },
   },
 }

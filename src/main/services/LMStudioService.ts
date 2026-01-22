@@ -3,7 +3,7 @@ import { logger } from './Logger'
 import { networkInterfaces } from 'os'
 
 export class LMStudioService {
-  private static readonly REQUEST_TIMEOUT = 5000
+  private static readonly REQUEST_TIMEOUT = 30000
 
   private static async fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
     const controller = new AbortController()
@@ -202,6 +202,7 @@ export class LMStudioService {
           messages,
           temperature: 0.7,
           max_tokens: 1000,
+          stream: false, // Disable streaming for now to keep the existing API
         }),
       })
 
@@ -223,6 +224,103 @@ export class LMStudioService {
         }
       }
       throw error
+    }
+  }
+
+  async generateCompletionStream(
+    text: string,
+    systemPrompt?: string,
+    onChunk?: (chunk: string) => void,
+    onComplete?: (finalText: string) => void,
+    onError?: (error: Error) => void
+  ): Promise<void> {
+    try {
+      const settings = configManager.getLMStudioSettings()
+      // LM Studio integration is always enabled now
+
+      // Use model from settings or fallback to 'default'
+      const model = settings.model || 'default'
+
+      const url = `${configManager.getConnectionString()}${settings.apiPath}/chat/completions`
+      logger.info(`Generating streaming completion with LM Studio at: ${url}`)
+      const messages = [
+        ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+        { role: 'user' as const, content: text },
+      ]
+
+      const response = await LMStudioService.fetchWithTimeout(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: model,
+          messages,
+          temperature: 0.7,
+          max_tokens: 1000,
+          stream: true, // Enable streaming
+        }),
+      })
+
+      logger.info(`LM Studio streaming completion response status: ${response.status}`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      if (!response.body) {
+        throw new Error('Response body is null')
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let fullText = ''
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n').filter(line => line.trim() !== '')
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6)
+              if (data === '[DONE]') {
+                // Stream is complete
+                onComplete?.(fullText)
+                return
+              }
+
+              try {
+                const parsed = JSON.parse(data)
+                const content = parsed.choices?.[0]?.delta?.content || ''
+                if (content) {
+                  fullText += content
+                  onChunk?.(content)
+                }
+              } catch (parseError) {
+                logger.warn('Failed to parse streaming data:', data)
+              }
+            }
+          }
+        }
+
+        // If we get here, the stream ended without [DONE]
+        onComplete?.(fullText)
+      } finally {
+        reader.releaseLock()
+      }
+    } catch (error) {
+      logger.error('Failed to generate streaming completion:', error as Error)
+      // Log specific error details
+      if (error instanceof Error) {
+        logger.error(`Error name: ${error.name}, message: ${error.message}`)
+        if ('cause' in error && error.cause) {
+          logger.error(`Error cause: ${String(error.cause)}`)
+        }
+      }
+      onError?.(error as Error)
     }
   }
 }

@@ -24,4 +24,6 @@ export enum IpcChannel {
   LMStudio_GenerateCompletion = 'lmstudio:generateCompletion',
   Window_OpenResult = 'window:openResult',
   Window_CloseResult = 'window:closeResult',
+  Window_UpdateResult = 'window:updateResult',
+  LMStudio_GenerateCompletionStream = 'lmstudio:generateCompletionStream',
 }

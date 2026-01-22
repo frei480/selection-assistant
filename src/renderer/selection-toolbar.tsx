@@ -75,27 +75,34 @@ const SelectionToolbar: React.FC = () => {
       }
 
       try {
-        const result = await window.ipc?.lmstudio.generateCompletion(prompts[action])
-
-        const actionItem: ActionItem = {
-          id: action,
-          name: action,
-          icon: 'info',
-          enabled: true,
-          isBuiltIn: true,
-          selectedText: state.selectedText,
-        }
-
-        await window.ipc?.selection.processAction(actionItem, false)
+        console.log(`[SelectionToolbar] Opening result window immediately for action: ${action}`)
+        // Open result window immediately with loading state
         await window.ipc?.window.openResult({
           action: action as any,
           text: state.selectedText,
-          result,
+          result: 'Generating response...',
         })
+
+        console.log(`[SelectionToolbar] Generating streaming completion for action: ${action}`)
+        // Use streaming completion instead of regular completion
+        let accumulatedResult = ''
+        await window.ipc?.lmstudio.generateCompletionStream(
+          prompts[action],
+          (chunk: string) => {
+            console.log(`[SelectionToolbar] Streaming chunk:`, chunk?.substring(0, 100))
+            // Accumulate the result and update the window
+            accumulatedResult += chunk
+            window.ipc?.window.updateResult(accumulatedResult)
+          }
+        )
+
+        console.log(`[SelectionToolbar] Streaming completion finished`)
 
         await window.ipc?.selection.hideToolbar()
       } catch (error) {
         console.error('Error:', error)
+        // Update result window with error message
+        window.ipc?.window.updateResult(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     },
     [state.selectedText]

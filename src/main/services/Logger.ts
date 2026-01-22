@@ -8,21 +8,19 @@ export class Logger {
   }
 
   info(message: string, data?: any): void {
-    console.log(`[${this.context}] ${message}`, data || '')
+    console.log(`[INFO][${this.context}] ${message}`, data || '')
   }
 
-  error(message: string, error?: Error): void {
-    console.error(`[${this.context}] ${message}`, error || '')
+  error(message: string, error?: Error | any): void {
+    console.error(`[ERROR][${this.context}] ${message}`, error || '')
   }
 
   warn(message: string, data?: any): void {
-    console.warn(`[${this.context}] ${message}`, data || '')
+    console.warn(`[WARN][${this.context}] ${message}`, data || '')
   }
 
   debug(message: string, data?: any): void {
-    if (process.env.DEBUG) {
-      console.debug(`[${this.context}] ${message}`, data || '')
-    }
+    console.debug(`[DEBUG][${this.context}] ${message}`, data || '')
   }
 
   withContext(context: string): Logger {

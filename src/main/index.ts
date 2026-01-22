@@ -99,11 +99,15 @@ const createSettingsWindow = (): void => {
 }
 
 const createResultWindow = (options: any): void => {
+  console.log('[MAIN] createResultWindow called with options:', options)
+  
   if (resultWindow) {
+    console.log('[MAIN] Result window already exists, focusing...')
     resultWindow.focus()
     return
   }
 
+  console.log('[MAIN] Creating new result window...')
   resultWindow = new BrowserWindow({
     width: 800,
     height: 600,
@@ -116,27 +120,37 @@ const createResultWindow = (options: any): void => {
       sandbox: true,
     },
   })
+  console.log('[MAIN] Result window created:', resultWindow.id)
 
   resultWindow.on('closed', () => {
+    console.log('[MAIN] Result window closed')
     resultWindow = null
   })
 
   const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'] || 'http://localhost:5173'
+  console.log('[MAIN] VITE_DEV_SERVER_URL:', VITE_DEV_SERVER_URL)
 
   // Передаем данные результата через query параметры
   const resultData = encodeURIComponent(JSON.stringify(options))
+  console.log('[MAIN] Result data encoded:', resultData.substring(0, 100))
+  
+  // Pass data as individual parameters to match ResultPage expectations
   const url = isDevelopment
-    ? `${VITE_DEV_SERVER_URL}/#/result?data=${resultData}`
-    : `file://${path.join(__dirname, '../renderer/index.html')}#/result?data=${resultData}`
+    ? `${VITE_DEV_SERVER_URL}/#/result?action=${encodeURIComponent(options.action || '')}&text=${encodeURIComponent(options.text || '')}&result=${encodeURIComponent(options.result || '')}`
+    : `file://${path.join(__dirname, '../renderer/index.html')}#/result?action=${encodeURIComponent(options.action || '')}&text=${encodeURIComponent(options.text || '')}&result=${encodeURIComponent(options.result || '')}`
 
+  console.log('[MAIN] Loading URL:', url)
   if (isDevelopment) {
     resultWindow.loadURL(url)
     resultWindow.webContents.openDevTools()
   } else {
-    resultWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
-      hash: `/result?data=${resultData}`,
+    // For production, we need to load the file with hash properly
+    const indexPath = path.join(__dirname, '../renderer/index.html')
+    resultWindow.loadFile(indexPath, {
+      hash: `#/result?action=${encodeURIComponent(options.action || '')}&text=${encodeURIComponent(options.text || '')}&result=${encodeURIComponent(options.result || '')}`,
     })
   }
+  console.log('[MAIN] URL loaded, result window should be visible')
 }
 
 // Register IPC handlers
@@ -165,8 +179,8 @@ const registerIpcHandlers = (): void => {
 
   // LM Studio handlers
   ipcMain.handle(IpcChannel.LMStudio_TestConnection, async (): Promise<boolean> => {
-    console.log('[MAIN] IPC handler for LMStudio_TestConnection called')
-    logger.info('IPC handler for LMStudio_TestConnection called')
+    console.log('[MAIN] === IPC handler for LMStudio_TestConnection called ===')
+    logger.info('=== IPC handler for LMStudio_TestConnection called ===')
     const result = await lmStudioService.testConnection()
     console.log(`[MAIN] LMStudio testConnection completed with result: ${result}`)
     logger.info('LMStudio testConnection completed with result:', result)
@@ -182,6 +196,29 @@ const registerIpcHandlers = (): void => {
     IpcChannel.LMStudio_GenerateCompletion,
     async (_, prompt: string): Promise<string> => {
       return lmStudioService.generateCompletion(prompt)
+    }
+  )
+
+  ipcMain.handle(
+    IpcChannel.LMStudio_GenerateCompletionStream,
+    async (event, prompt: string): Promise<void> => {
+      return lmStudioService.generateCompletionStream(
+        prompt,
+        undefined, // systemPrompt
+        (chunk: string) => {
+          // Send chunk to the sender
+          event.sender.send(`${IpcChannel.LMStudio_GenerateCompletionStream}_chunk`, chunk)
+        },
+        (finalText: string) => {
+          // Stream completed
+          console.log('[MAIN] Streaming completion finished with final text length:', finalText.length)
+        },
+        (error: Error) => {
+          // Handle error
+          console.error('[MAIN] Streaming completion error:', error)
+          event.sender.send(`${IpcChannel.LMStudio_GenerateCompletionStream}_error`, error.message)
+        }
+      )
     }
   )
 
@@ -206,13 +243,23 @@ const registerIpcHandlers = (): void => {
 
   // Result window handlers
   ipcMain.handle(IpcChannel.Window_OpenResult, async (_, options: ResultWindowOptions) => {
+    console.log('[MAIN] Window_OpenResult IPC handler called with options:', options)
     createResultWindow(options)
+    console.log('[MAIN] createResultWindow completed')
   })
 
   ipcMain.handle(IpcChannel.Window_CloseResult, async () => {
     if (resultWindow) {
       resultWindow.close()
       resultWindow = null
+    }
+  })
+
+  ipcMain.handle(IpcChannel.Window_UpdateResult, async (_, result: string) => {
+    console.log('[MAIN] Window_UpdateResult IPC handler called with result:', result?.substring(0, 100))
+    // Send update to result window if it exists
+    if (resultWindow) {
+      resultWindow.webContents.send(IpcChannel.Window_UpdateResult, result)
     }
   })
 }

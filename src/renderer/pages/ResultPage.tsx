@@ -3,26 +3,52 @@ import { useSearchParams } from 'react-router-dom'
 import { Button, Empty, Space, Spin } from 'antd'
 import { CopyOutlined, CloseOutlined } from '@ant-design/icons'
 import ResultWindow from '../components/ResultWindow'
+import { IpcChannel } from '../../shared/ipcChannels'
 
 export default function ResultPage() {
   const [searchParams] = useSearchParams()
   const [loading, setLoading] = useState(false)
+  const [currentResult, setCurrentResult] = useState('')
 
   const action = searchParams.get('action') as 'explain' | 'summarize' | 'translate' | null
   const text = searchParams.get('text')
-  const result = searchParams.get('result')
+  const initialResult = searchParams.get('result')
+
+  // Initialize result with initial value from URL
+  useEffect(() => {
+    if (initialResult) {
+      setCurrentResult(initialResult)
+    }
+  }, [initialResult])
+
+  // Listen for streaming updates
+  useEffect(() => {
+    const handleUpdateResult = (result: string) => {
+      console.log('[ResultPage] Received streaming update:', result?.substring(0, 100))
+      setCurrentResult(result)
+    }
+
+    // Add event listener for streaming updates
+    window.ipc?.selection.onUpdateResult(handleUpdateResult)
+
+    // Cleanup listener on unmount
+    return () => {
+      // Note: We don't have a way to remove the listener through the current API
+      // In a more advanced implementation, we would add a method to remove listeners
+    }
+  }, [])
 
   const handleClose = () => {
     window.ipc?.window.closeResult()
   }
 
   const handleCopy = () => {
-    if (result) {
-      navigator.clipboard.writeText(result)
+    if (currentResult) {
+      navigator.clipboard.writeText(currentResult)
     }
   }
 
-  if (!action || !text || !result) {
+  if (!action || !text) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
         <Empty description="No data provided" />
@@ -49,7 +75,7 @@ export default function ResultPage() {
       </div>
 
       <div style={{ flex: 1, overflow: 'auto' }}>
-        <ResultWindow action={action} text={text} result={result} />
+        <ResultWindow action={action} text={text} result={currentResult} onClose={handleClose} />
       </div>
 
       <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f0f0f0' }}>

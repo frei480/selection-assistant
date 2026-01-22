@@ -86,10 +86,10 @@ export const ResultWindow: React.FC<ResultWindowProps> = ({
         </Button>
       </div>
 
-      <div className="content">
+      {/* <div className="content">
         <h3>Исходный текст</h3>
         <p>{text}</p>
-      </div>
+      </div> */}
 
       <div className="content">
         <div
