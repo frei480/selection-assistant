@@ -71,7 +71,7 @@ const SelectionToolbar: React.FC = () => {
       const prompts = {
         explain: `Explain the following text in simple terms:\n\n${state.selectedText}`,
         summarize: `Summarize this text in 2-3 sentences:\n\n${state.selectedText}`,
-        translate: `Translate this text to English:\n\n${state.selectedText}`,
+        translate: `Translate this text to Russian:\n\n${state.selectedText}`,
       }
 
       try {

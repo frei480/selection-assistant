@@ -135,9 +135,9 @@ const ResultWindow: React.FC = () => {
         </h2>
         <Space>
           <Button icon={<Copy size={16} />} onClick={handleCopy}>
-            Copy
+            Копировать
           </Button>
-          <Button onClick={handleClose}>Close</Button>
+          <Button onClick={handleClose}>Закрыть</Button>
         </Space>
       </div>
 

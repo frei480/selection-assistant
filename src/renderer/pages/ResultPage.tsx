@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Button, Empty, Space, Spin } from 'antd'
-import { CopyOutlined, CloseOutlined } from '@ant-design/icons'
 import ResultWindow from '../components/ResultWindow'
 import { IpcChannel } from '../../shared/ipcChannels'
 
@@ -42,12 +41,6 @@ export default function ResultPage() {
     window.ipc?.window.closeResult()
   }
 
-  const handleCopy = () => {
-    if (currentResult) {
-      navigator.clipboard.writeText(currentResult)
-    }
-  }
-
   if (!action || !text) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
@@ -60,39 +53,9 @@ export default function ResultPage() {
   }
 
   return (
-    <div style={{ padding: '20px', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
-        <div>
-          <h3>
-            {action.charAt(0).toUpperCase() + action.slice(1)} Result
-          </h3>
-        </div>
-        <Button 
-          type="text" 
-          icon={<CloseOutlined />} 
-          onClick={handleClose}
-        />
-      </div>
-
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, overflow: 'auto' }}>
         <ResultWindow action={action} text={text} result={currentResult} onClose={handleClose} />
-      </div>
-
-      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f0f0f0' }}>
-        <Space>
-          <Button 
-            icon={<CopyOutlined />} 
-            onClick={handleCopy}
-          >
-            Copy Result
-          </Button>
-          <Button 
-            onClick={handleClose}
-            danger
-          >
-            Close
-          </Button>
-        </Space>
       </div>
     </div>
   )

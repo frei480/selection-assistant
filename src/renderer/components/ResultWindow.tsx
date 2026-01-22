@@ -78,13 +78,9 @@ export const ResultWindow: React.FC<ResultWindowProps> = ({
 
   return (
     <ResultContainer>
-      <div className="header">
+      {/* <div className="actions">
         <h2>{actionTitles[action]}</h2>
-        <Button type="primary" danger onClick={onClose}>
-          <ArrowLeft size={14} style={{ marginRight: 4 }} />
-          Закрыть
-        </Button>
-      </div>
+      </div> */}
 
       {/* <div className="content">
         <h3>Исходный текст</h3>
@@ -92,34 +88,21 @@ export const ResultWindow: React.FC<ResultWindowProps> = ({
       </div> */}
 
       <div className="content">
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <h3>{actionTitles[action]}</h3>
-          <Button
-            type="text"
-            size="small"
-            icon={<Copy size={14} />}
-            onClick={() => copyToClipboard(result)}
-          >
-            Копировать
-          </Button>
-        </div>
+        {/* <h3>{actionTitles[action]}</h3> */}
         <p>{result}</p>
       </div>
 
       <div className="actions">
-        <Button onClick={onClose}>Назад</Button>
         <Button
-          type="primary"
-          onClick={() => copyToClipboard(result)}
+          type="default"
+          size="middle"
           icon={<CopyOutlined />}
+          onClick={() => copyToClipboard(result)}
         >
-          Копировать результат
+          Копировать
+        </Button>
+        <Button type="primary" danger onClick={onClose}>
+          Закрыть
         </Button>
       </div>
     </ResultContainer>
