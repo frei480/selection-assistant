@@ -106,7 +106,7 @@ const SelectionWidget: React.FC<SelectionWidgetProps> = ({
           icon={<MessageSquare size={16} />} 
           label="Explain" 
           onClick={onExplain}
-          tooltip="Explain the text"
+          tooltip="Объясни!"
         />
         <ActionButton 
           icon={<BookOpen size={16} />} 
