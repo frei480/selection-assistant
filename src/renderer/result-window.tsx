@@ -84,9 +84,8 @@ const ResultWindow: React.FC = () => {
     }
 
     // Also listen for updates from main process
-    window.ipc?.selection.onUpdateActionData((actionData) => {
-      // Update if needed
-    })
+    // window.ipc?.selection.onUpdateActionData is not implemented
+    // No update listener needed for now)
   }, [])
 
   const handleCopy = async () => {

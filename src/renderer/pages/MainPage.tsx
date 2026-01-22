@@ -33,7 +33,7 @@ export const MainPage: React.FC = () => {
   }, [])
 
   const handleOpenSettings = async () => {
-    await window.electronAPI.window.openSettings()
+    await window.ipc.window.openSettings()
   }
 
   const handleCopyToClipboard = () => {
@@ -123,11 +123,15 @@ export const MainPage: React.FC = () => {
       </Footer>
 
       {selectedText && widgetPosition && (
-        <SelectionWidget
-          position={widgetPosition}
-          selectedText={selectedText}
-          onClose={handleCloseWidget}
-        />
+        <div style={{ position: 'absolute', left: widgetPosition.x, top: widgetPosition.y, zIndex: 1000 }}>
+          <SelectionWidget
+            selectedText={selectedText}
+            onCopy={handleCopyToClipboard}
+            onExplain={() => console.log('Explain action')}
+            onSummarize={() => console.log('Summarize action')}
+            onTranslate={() => console.log('Translate action')}
+          />
+        </div>
       )}
     </Container>
   )

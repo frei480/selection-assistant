@@ -22,7 +22,6 @@ export interface TextSelectionData {
 }
 
 export interface LMStudioSettings {
-  enabled: boolean
   host: string
   port: number
   model: string

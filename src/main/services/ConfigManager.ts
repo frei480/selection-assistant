@@ -9,7 +9,6 @@ const defaultSettings: SettingsConfig = {
   filterList: [],
   compactMode: false,
   lmStudio: {
-    enabled: true,
     host: 'localhost',
     port: 1234,
     model: 'default',
@@ -57,7 +56,6 @@ export class ConfigManager {
           type: 'object',
           default: defaultSettings.lmStudio,
           properties: {
-            enabled: { type: 'boolean' },
             host: { type: 'string' },
             port: { type: 'number' },
             model: { type: 'string' },
@@ -121,7 +119,7 @@ export class ConfigManager {
 
   public getConnectionString(): string {
     const settings = this.getLMStudioSettings()
-    return `http://${settings.host}:${settings.port}/v1`
+    return `http://${settings.host}:${settings.port}`
   }
 }
 

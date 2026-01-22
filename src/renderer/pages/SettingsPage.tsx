@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Form, Input, Switch, Button, Select, Space, Card, message, Spin } from 'antd'
 import styled from 'styled-components'
 import type { SettingsConfig } from '@shared/types'
+import type {} from '../types/electron'
 
 interface SettingsPageProps {
   onClose?: () => void
@@ -20,7 +21,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
 
   const loadSettings = async () => {
     try {
-      const loaded = await window.electronAPI.settings.get()
+      // Check if IPC API is available
+      if (!window.ipc || !window.ipc.settings) {
+        message.error('IPC API is not available. Please restart the application.')
+        setLoading(false)
+        return
+      }
+      
+      const loaded = await window.ipc.settings.get()
       setSettings(loaded)
       form.setFieldsValue(loaded)
     } catch (error) {
@@ -33,8 +41,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
 
   const handleSave = async (values: any) => {
     try {
+      // Check if IPC API is available
+      if (!window.ipc || !window.ipc.settings) {
+        message.error('IPC API is not available. Please restart the application.')
+        return
+      }
+      
       for (const [key, value] of Object.entries(values)) {
-        await window.electronAPI.settings.set(key as any, value)
+        await window.ipc.settings.set(key as any, value)
       }
       message.success('Settings saved successfully')
     } catch (error) {
@@ -46,16 +60,28 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
   const handleTestConnection = async () => {
     setTestingConnection(true)
     try {
-      const isConnected = await window.electronAPI.lmstudio.testConnection()
+      // Check if IPC API is available
+      if (!window.ipc || !window.ipc.lmstudio) {
+        message.error('IPC API is not available. Please restart the application.')
+        setTestingConnection(false)
+        return
+      }
+      
+      const isConnected = await window.ipc.lmstudio.testConnection()
       if (isConnected) {
         message.success('Connected to LM Studio successfully!')
-        const modelsList = await window.electronAPI.lmstudio.getModels()
+        const modelsList = await window.ipc.lmstudio.getModels()
         setModels(modelsList)
+        if (modelsList.length > 0) {
+          message.success(`Found ${modelsList.length} models`)
+        } else {
+          message.warning('No models found. Make sure you have loaded models in LM Studio.')
+        }
       } else {
-        message.error('Failed to connect to LM Studio')
+        message.error('Failed to connect to LM Studio. Please check that LM Studio is running, the API server is enabled, your connection settings are correct, and that your firewall allows connections on the specified port.')
       }
     } catch (error) {
-      message.error('Connection test failed')
+      message.error('Connection test failed: ' + (error as Error).message)
       console.error(error)
     } finally {
       setTestingConnection(false)
@@ -150,14 +176,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
 
         {/* LM Studio Settings */}
         <Card title="LM Studio Integration" style={{ marginBottom: 24 }}>
-          <Form.Item
-            name={['lmStudio', 'enabled']}
-            label="Enable LM Studio Integration"
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
           <Form.Item
             name={['lmStudio', 'host']}
             label="LM Studio Host"
