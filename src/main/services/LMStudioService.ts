@@ -40,11 +40,15 @@ export class LMStudioService {
         } else if (error.message.includes('EHOSTUNREACH') || error.message.includes('ENETUNREACH')) {
           logger.error(`Network unreachable when connecting to ${url}: ${error.message}`)
           throw new Error(`Network unreachable: Unable to reach ${url}. Please check your network connection and firewall settings.`)
+        } else if (error.message.includes('EACCES')) {
+          logger.error(`Permission denied when connecting to ${url}: ${error.message}`)
+          throw new Error(`Permission denied: Unable to connect to LM Studio at ${url}. Please check your firewall and network permissions.`)
         } else {
           logger.error(`Network error when connecting to ${url}: ${error.message}`)
           throw new Error(`Network error: ${error.message}. Please check your connection settings and network connectivity.`)
         }
       }
+      logger.error(`Unknown error occurred while connecting to LM Studio: ${String(error)}`)
       throw new Error(`Unknown error occurred while connecting to LM Studio: ${String(error)}`)
     } finally {
       clearTimeout(timeoutId)
@@ -53,13 +57,16 @@ export class LMStudioService {
 
   async testConnection(): Promise<boolean> {
     try {
-      logger.info('Starting LM Studio connection test')
+      console.log('[LMStudioService] === STARTING LM STUDIO CONNECTION TEST ===')
+      logger.info('=== STARTING LM STUDIO CONNECTION TEST ===')
       const settings = configManager.getLMStudioSettings()
       // LM Studio integration is always enabled now
+      console.log('[LMStudioService] LM Studio settings retrieved:', settings)
       logger.info(`LM Studio settings retrieved:`, settings)
 
       const baseUrl = configManager.getConnectionString()
       const url = `${baseUrl}${settings.apiPath}/models`
+      console.log('[LMStudioService] Testing LM Studio connection at:', url)
       logger.info(`Testing LM Studio connection at: ${url}`)
       logger.info(`LM Studio settings: host=${settings.host}, port=${settings.port}, apiPath=${settings.apiPath}`)
       
@@ -87,6 +94,7 @@ export class LMStudioService {
         }
       }
       
+      console.log('[LMStudioService] Making request to LM Studio')
       const response = await LMStudioService.fetchWithTimeout(url, {
         method: 'GET',
         headers: {
@@ -94,18 +102,22 @@ export class LMStudioService {
         },
       })
 
+      console.log('[LMStudioService] LM Studio connection test response status:', response.status)
       logger.info(`LM Studio connection test response status: ${response.status}`)
       logger.info(`LM Studio connection test response ok: ${response.ok}`)
       if (!response.ok) {
         const errorText = await response.text()
+        console.log('[LMStudioService] LM Studio connection test failed with status:', response.status, 'error:', errorText)
         logger.error(`LM Studio connection test failed with status ${response.status}: ${errorText}`)
         logger.info(`Returning false due to non-ok response`)
         // Instead of throwing, we return false to indicate connection failure
         return false
       }
+      console.log('[LMStudioService] LM Studio connection test successful')
       logger.info(`Returning true as response is ok`)
       return true
     } catch (error) {
+      console.log('[LMStudioService] LM Studio connection test failed with error:', error)
       logger.error('LM Studio connection test failed:', error as Error)
       // Log specific error details
       if (error instanceof Error) {
