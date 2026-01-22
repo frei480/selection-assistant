@@ -119,7 +119,10 @@ export class ConfigManager {
 
   public getConnectionString(): string {
     const settings = this.getLMStudioSettings()
-    return `http://${settings.host}:${settings.port}`
+    const connectionString = `http://${settings.host}:${settings.port}`
+    console.log(`[ConfigManager] getConnectionString() returning: ${connectionString}`)
+    console.log(`[ConfigManager] LMStudio settings:`, settings)
+    return connectionString
   }
 }
 

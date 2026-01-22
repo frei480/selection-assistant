@@ -165,7 +165,13 @@ const registerIpcHandlers = (): void => {
 
   // LM Studio handlers
   ipcMain.handle(IpcChannel.LMStudio_TestConnection, async (): Promise<boolean> => {
-    return lmStudioService.testConnection()
+    console.log('[MAIN] IPC handler for LMStudio_TestConnection called')
+    logger.info('IPC handler for LMStudio_TestConnection called')
+    const result = await lmStudioService.testConnection()
+    console.log(`[MAIN] LMStudio testConnection completed with result: ${result}`)
+    logger.info('LMStudio testConnection completed with result:', result)
+    console.log(`[MAIN] Returning result from IPC handler: ${result}`)
+    return result
   })
 
   ipcMain.handle(IpcChannel.LMStudio_GetModels, async (): Promise<string[]> => {

@@ -10,14 +10,24 @@ export class LMStudioService {
     const timeoutId = setTimeout(() => controller.abort(), LMStudioService.REQUEST_TIMEOUT)
     
     try {
+      logger.info(`Making request to: ${url}`)
+      logger.info(`Request timeout: ${LMStudioService.REQUEST_TIMEOUT}ms`)
+      logger.info(`Request init: ${JSON.stringify(init)}`)
+      
       const response = await fetch(url, {
         ...init,
         signal: controller.signal,
       })
+      
+      logger.info(`Response received: status=${response.status}, ok=${response.ok}`)
       return response
     } catch (error) {
       // Log network errors specifically
+      logger.error(`Network error occurred during fetch:`, error as Error)
+      
       if (error instanceof Error) {
+        logger.error(`Error details - name: ${error.name}, message: ${error.message}`)
+        
         if (error.name === 'AbortError') {
           logger.error(`Request to ${url} timed out after ${LMStudioService.REQUEST_TIMEOUT}ms`)
           throw new Error(`Connection timeout: Request to LM Studio timed out after ${LMStudioService.REQUEST_TIMEOUT}ms. Please check if LM Studio is running and accessible.`)
@@ -43,13 +53,40 @@ export class LMStudioService {
 
   async testConnection(): Promise<boolean> {
     try {
+      logger.info('Starting LM Studio connection test')
       const settings = configManager.getLMStudioSettings()
       // LM Studio integration is always enabled now
+      logger.info(`LM Studio settings retrieved:`, settings)
 
       const baseUrl = configManager.getConnectionString()
       const url = `${baseUrl}${settings.apiPath}/models`
       logger.info(`Testing LM Studio connection at: ${url}`)
       logger.info(`LM Studio settings: host=${settings.host}, port=${settings.port}, apiPath=${settings.apiPath}`)
+      
+      // Log the individual components for debugging
+      logger.info(`LM Studio base URL components: host=${settings.host}, port=${settings.port}`)
+      logger.info(`LM Studio API path: ${settings.apiPath}`)
+      logger.info(`Constructed base URL: ${baseUrl}`)
+      logger.info(`Full test URL: ${url}`)
+      
+      // Check if host is localhost or 127.0.0.1 and provide specific guidance
+      if (settings.host === 'localhost' || settings.host === '127.0.0.1') {
+        const nets = networkInterfaces()
+        let hasLocalhost = false
+        for (const name of Object.keys(nets)) {
+          for (const net of nets[name] || []) {
+            if (!net.internal && net.family === 'IPv4') {
+              hasLocalhost = true
+              break
+            }
+          }
+          if (hasLocalhost) break
+        }
+        if (!hasLocalhost) {
+          logger.warn('No external network interfaces found. This might affect localhost connections.')
+        }
+      }
+      
       const response = await LMStudioService.fetchWithTimeout(url, {
         method: 'GET',
         headers: {
@@ -58,7 +95,16 @@ export class LMStudioService {
       })
 
       logger.info(`LM Studio connection test response status: ${response.status}`)
-      return response.ok
+      logger.info(`LM Studio connection test response ok: ${response.ok}`)
+      if (!response.ok) {
+        const errorText = await response.text()
+        logger.error(`LM Studio connection test failed with status ${response.status}: ${errorText}`)
+        logger.info(`Returning false due to non-ok response`)
+        // Instead of throwing, we return false to indicate connection failure
+        return false
+      }
+      logger.info(`Returning true as response is ok`)
+      return true
     } catch (error) {
       logger.error('LM Studio connection test failed:', error as Error)
       // Log specific error details
@@ -68,6 +114,8 @@ export class LMStudioService {
           logger.error(`Error cause: ${String(error.cause)}`)
         }
       }
+      logger.info('Returning false due to caught error')
+      // Return false to indicate connection failure
       return false
     }
   }

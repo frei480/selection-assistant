@@ -26,7 +26,13 @@ const api = {
     reset: (): Promise<void> => ipcRenderer.invoke(IpcChannels.Settings_Reset),
   },
   lmstudio: {
-    testConnection: (): Promise<boolean> => ipcRenderer.invoke(IpcChannels.LMStudio_TestConnection),
+    testConnection: (): Promise<boolean> => {
+      console.log('[preload] testConnection called')
+      console.log('[preload] Invoking IPC channel:', IpcChannels.LMStudio_TestConnection)
+      const result = ipcRenderer.invoke(IpcChannels.LMStudio_TestConnection)
+      console.log('[preload] IPC invoke returned promise:', result)
+      return result
+    },
     getModels: (): Promise<string[]> => ipcRenderer.invoke(IpcChannels.LMStudio_GetModels),
     generateCompletion: (prompt: string): Promise<string> =>
       ipcRenderer.invoke(IpcChannels.LMStudio_GenerateCompletion, prompt),

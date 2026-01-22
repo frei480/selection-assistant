@@ -58,6 +58,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
   }
 
   const handleTestConnection = async () => {
+    console.log('[SettingsPage] handleTestConnection called')
     setTestingConnection(true)
     try {
       // Check if IPC API is available
@@ -67,7 +68,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
         return
       }
       
+      console.log('[SettingsPage] Calling window.ipc.lmstudio.testConnection()')
       const isConnected = await window.ipc.lmstudio.testConnection()
+      console.log(`[SettingsPage] testConnection returned: ${isConnected}`)
       if (isConnected) {
         message.success('Connected to LM Studio successfully!')
         const modelsList = await window.ipc.lmstudio.getModels()
@@ -81,9 +84,23 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
         message.error('Failed to connect to LM Studio. Please check that LM Studio is running, the API server is enabled, your connection settings are correct, and that your firewall allows connections on the specified port.')
       }
     } catch (error) {
-      message.error('Connection test failed: ' + (error as Error).message)
+      const errorMessage = (error as Error).message || 'Unknown error occurred'
+      console.log(`[SettingsPage] Connection test failed with error: ${errorMessage}`)
+      message.error(`Connection test failed: ${errorMessage}`)
       console.error(error)
+      
+      // Provide specific troubleshooting guidance based on error type
+      if (errorMessage.includes('Connection timeout')) {
+        message.info('Troubleshooting tip: Try increasing the timeout or check if LM Studio is running on the specified host and port.')
+      } else if (errorMessage.includes('Connection refused')) {
+        message.info('Troubleshooting tip: Make sure LM Studio is running and the API server is enabled in LM Studio settings.')
+      } else if (errorMessage.includes('DNS lookup failed')) {
+        message.info('Troubleshooting tip: Check your host setting and network connection.')
+      } else if (errorMessage.includes('Network unreachable')) {
+        message.info('Troubleshooting tip: Check your network connection and firewall settings.')
+      }
     } finally {
+      console.log('[SettingsPage] Finished testing connection')
       setTestingConnection(false)
     }
   }
