@@ -81,7 +81,7 @@ const createSettingsWindow = (): void => {
       sandbox: true,
     },
   })
-
+  settingsWindow.setMenu(null)
   settingsWindow.on('closed', () => {
     settingsWindow = null
   })
@@ -121,7 +121,7 @@ const createResultWindow = (options: any): void => {
     },
   })
   console.log('[MAIN] Result window created:', resultWindow.id)
-
+  resultWindow.setMenu(null)
   resultWindow.on('closed', () => {
     console.log('[MAIN] Result window closed')
     resultWindow = null
