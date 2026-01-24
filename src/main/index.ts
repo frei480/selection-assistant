@@ -55,7 +55,7 @@ const createWindow = (): void => {
   if (isDevelopment) {
     logger.info(`Loading from dev server: ${VITE_DEV_SERVER_URL}`)
     mainWindow.loadURL(VITE_DEV_SERVER_URL)
-    mainWindow.webContents.openDevTools()
+    //mainWindow.webContents.openDevTools()
   } else {
     const indexPath = path.join(__dirname, '../renderer/index.html')
     logger.info(`Loading from file: ${indexPath}`)
@@ -90,7 +90,7 @@ const createSettingsWindow = (): void => {
 
   if (isDevelopment) {
     settingsWindow.loadURL(`${VITE_DEV_SERVER_URL}/#/settings`)
-    settingsWindow.webContents.openDevTools()
+    //settingsWindow.webContents.openDevTools()
   } else {
     settingsWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
       hash: '/settings',
@@ -142,7 +142,7 @@ const createResultWindow = (options: any): void => {
   console.log('[MAIN] Loading URL:', url)
   if (isDevelopment) {
     resultWindow.loadURL(url)
-    resultWindow.webContents.openDevTools()
+    //resultWindow.webContents.openDevTools()
   } else {
     // For production, we need to load the file with hash properly
     const indexPath = path.join(__dirname, '../renderer/index.html')
