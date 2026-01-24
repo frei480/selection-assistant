@@ -69,7 +69,7 @@ const SelectionToolbar: React.FC = () => {
   const handleAction = React.useCallback(
     async (action: 'explain' | 'summarize' | 'translate') => {
       const prompts = {
-        explain: `Explain the following text in simple terms:\n\n${state.selectedText}`,
+        explain: `Explain the following text in simple terms, answer in Russian language:\n\n${state.selectedText}`,
         summarize: `Summarize this text in 2-3 sentences:\n\n${state.selectedText}`,
         translate: `Translate this text to Russian:\n\n${state.selectedText}`,
       }
