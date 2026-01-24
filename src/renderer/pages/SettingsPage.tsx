@@ -3,6 +3,7 @@ import { Form, Input, Switch, Button, Select, Space, Card, message, Spin } from 
 import styled from 'styled-components'
 import type { SettingsConfig } from '@shared/types'
 import type {} from '../types/electron'
+import SelectionWidget from '@renderer/components/SelectionWidget'
 
 interface SettingsPageProps {
   onClose?: () => void
@@ -108,11 +109,31 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
   if (loading) {
     return <Spin />
   }
+const WidgetPreviewWrapper = styled.div`
+  margin: 4px 0 6px;
+  padding: 6px;
+  border: 1px dashed #d9d9d9;
+  border-radius: 8px;
+  background: #fafafa;
 
+  display: flex;
+  justify-content: center;
+  `
   return (
     <Container>
       <Title>Selection Assistant Settings</Title>
-
+      <Card title="Widget Preview" style={{ marginBottom: 6 }}>
+      <WidgetPreviewWrapper>
+        <SelectionWidget
+          selectedText="This is how the selection widget will look"
+          onCopy={() => {}}
+          onExplain={() => {}}
+          onSummarize={() => {}}
+          onTranslate={() => {}}
+          preview
+        />
+      </WidgetPreviewWrapper>
+    </Card>
       <Form
         form={form}
         layout="vertical"
@@ -120,6 +141,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
         initialValues={settings || {}}
       >
         {/* General Settings */}
+        
         <Card title="General Settings" style={{ marginBottom: 24 }}>
           <Form.Item
             name="triggerMode"
