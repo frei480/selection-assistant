@@ -4,7 +4,7 @@ import '@renderer/assets/styles/selection-toolbar.css'
 
 import React, { useState, useCallback } from 'react'
 import { Button, Avatar } from 'antd'
-import { Copy, MessageSquare, BookOpen, Languages } from 'lucide-react'
+import { Copy, BookOpen, Languages,FileQuestion } from 'lucide-react'
 import styled from 'styled-components'
 interface ActionButtonProps {
   icon: React.ReactNode
@@ -152,7 +152,7 @@ const SelectionWidget: React.FC<SelectionWidgetProps> = ({
           tooltip="Скопировать текст"
         />
         <ActionButton 
-          icon={<MessageSquare size={16} />} 
+          icon={<FileQuestion size={16} />} 
           label="Explain" 
           onClick={onExplain}
           tooltip="Объясни!"
