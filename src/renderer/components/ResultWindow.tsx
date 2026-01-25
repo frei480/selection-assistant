@@ -17,7 +17,7 @@ const ResultContainer = styled.div`
 const ScrollableContent = styled.div`
   flex: 1;
   overflow: auto;
-  padding-bottom: 50px; /* Space for footer */
+  padding-bottom: 12px; /* Space for footer */
 `
 
 const ContentWrapper = styled.div`
