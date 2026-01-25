@@ -1,269 +1,320 @@
 import React, { useState, useEffect } from 'react'
-import { Button, Space, Divider } from 'antd'
-import { Settings, Copy } from 'lucide-react'
+import { Form, Input, Switch, Button, Select, Space, Card, message, Spin } from 'antd'
 import styled from 'styled-components'
+import type { SettingsConfig } from '../../shared/types'
+import type {} from '../types/electron'
 import SelectionWidget from '../components/SelectionWidget'
+import { useNavigate } from 'react-router-dom'
 
-export const MainPage: React.FC = () => {
-  const [selectedText, setSelectedText] = useState('')
-  const [widgetPosition, setWidgetPosition] = useState<{ x: number; y: number } | null>(null)
+interface SettingsPageProps {
+  onClose?: () => void
+}
+
+export const MainPage: React.FC<SettingsPageProps> = ({ onClose }) => {
+  const navigate = useNavigate()
+  const [settings, setSettings] = useState<SettingsConfig | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [form] = Form.useForm()
+  const [testingConnection, setTestingConnection] = useState(false)
+  const [models, setModels] = useState<string[]>([])
 
   useEffect(() => {
-    const handleMouseUp = () => {
-      const selection = window.getSelection()
-      
-      if (selection && selection.toString().length > 0) {
-        const text = selection.toString()
-        const range = selection.getRangeAt(0)
-        const rect = range.getBoundingClientRect()
-        
-        setSelectedText(text)
-        setWidgetPosition({
-          x: Math.max(10, rect.left + window.scrollX),
-          y: Math.max(10, rect.top + window.scrollY - 50),
-        })
-      } else {
-        setSelectedText('')
-        setWidgetPosition(null)
-      }
-    }
-
-    document.addEventListener('mouseup', handleMouseUp)
-    return () => document.removeEventListener('mouseup', handleMouseUp)
+    loadSettings()
   }, [])
 
-  const handleOpenSettings = async () => {
-    await window.ipc.window.openSettings()
+  const loadSettings = async () => {
+    try {
+      // Check if IPC API is available
+      if (!window.ipc || !window.ipc.settings) {
+        message.error('IPC API is not available. Please restart the application.')
+        setLoading(false)
+        return
+      }
+      
+      const loaded = await window.ipc.settings.get()
+      setSettings(loaded)
+      form.setFieldsValue(loaded)
+    } catch (error) {
+      message.error('Failed to load settings')
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText('Sample text')
+  const handleSave = async (values: any) => {
+    try {
+      // Check if IPC API is available
+      if (!window.ipc || !window.ipc.settings) {
+        message.error('IPC API is not available. Please restart the application.')
+        return
+      }
+      
+      for (const [key, value] of Object.entries(values)) {
+        await window.ipc.settings.set(key as any, value)
+      }
+      message.success('Settings saved successfully')
+    } catch (error) {
+      message.error('Failed to save settings')
+      console.error(error)
+    }
   }
 
-  const handleCloseWidget = () => {
-    setSelectedText('')
-    setWidgetPosition(null)
+  const handleTestConnection = async () => {
+    console.log('[SettingsPage] handleTestConnection called')
+    setTestingConnection(true)
+    try {
+      // Check if IPC API is available
+      if (!window.ipc || !window.ipc.lmstudio) {
+        message.error('IPC API is not available. Please restart the application.')
+        setTestingConnection(false)
+        return
+      }
+      
+      console.log('[SettingsPage] Calling window.ipc.lmstudio.testConnection()')
+      const isConnected = await window.ipc.lmstudio.testConnection()
+      console.log(`[SettingsPage] testConnection returned: ${isConnected}`)
+      if (isConnected) {
+        message.success('Connected to LM Studio successfully!')
+        const modelsList = await window.ipc.lmstudio.getModels()
+        setModels(modelsList)
+        if (modelsList.length > 0) {
+          message.success(`Found ${modelsList.length} models`)
+        } else {
+          message.warning('No models found. Make sure you have loaded models in LM Studio.')
+        }
+      } else {
+        message.error('Failed to connect to LM Studio. Please check that LM Studio is running, the API server is enabled, your connection settings are correct, and that your firewall allows connections on the specified port.')
+      }
+    } catch (error) {
+      const errorMessage = (error as Error).message || 'Unknown error occurred'
+      console.log(`[SettingsPage] Connection test failed with error: ${errorMessage}`)
+      message.error(`Connection test failed: ${errorMessage}`)
+      console.error(error)
+      
+      // Provide specific troubleshooting guidance based on error type
+      if (errorMessage.includes('Connection timeout')) {
+        message.info('Troubleshooting tip: Try increasing the timeout or check if LM Studio is running on the specified host and port.')
+      } else if (errorMessage.includes('Connection refused')) {
+        message.info('Troubleshooting tip: Make sure LM Studio is running and the API server is enabled in LM Studio settings.')
+      } else if (errorMessage.includes('DNS lookup failed')) {
+        message.info('Troubleshooting tip: Check your host setting and network connection.')
+      } else if (errorMessage.includes('Network unreachable')) {
+        message.info('Troubleshooting tip: Check your network connection and firewall settings.')
+      }
+    } finally {
+      console.log('[SettingsPage] Finished testing connection')
+      setTestingConnection(false)
+    }
   }
 
+  if (loading) {
+    return <Spin />
+  }
+const WidgetPreviewWrapper = styled.div`
+  margin: 4px 0 6px;
+  padding: 6px;
+  border: 1px dashed #d9d9d9;
+  border-radius: 8px;
+  background: #fafafa;
+
+  display: flex;
+  justify-content: center;
+  `
   return (
     <Container>
-      <Header>
-        <Title>Selection Assistant</Title>
-        <Subtitle>Text Selection & AI Integration Tool</Subtitle>
-      </Header>
-
-      <Content>
-        <Section>
-          <SectionTitle>Quick Start</SectionTitle>
-          <SectionContent>
-            <p>Selection Assistant helps you quickly process selected text with AI capabilities.</p>
-            <StepList>
-              <li>1. Configure your settings (open Settings below)</li>
-              <li>2. Set up LM Studio connection for AI features</li>
-              <li>3. Select text in any application</li>
-              <li>4. Use the floating toolbar to process the text</li>
-            </StepList>
-          </SectionContent>
-        </Section>
-
-        <Divider />
-
-        <Section>
-          <SectionTitle>Features</SectionTitle>
-          <FeatureGrid>
-            <FeatureCard>
-              <FeatureTitle>Text Selection</FeatureTitle>
-              <FeatureDesc>Detect and process selected text from any application</FeatureDesc>
-            </FeatureCard>
-            <FeatureCard>
-              <FeatureTitle>AI Integration</FeatureTitle>
-              <FeatureDesc>Connect to LM Studio for local AI processing</FeatureDesc>
-            </FeatureCard>
-            <FeatureCard>
-              <FeatureTitle>Floating Toolbar</FeatureTitle>
-              <FeatureDesc>Quick access toolbar appears near your selection</FeatureDesc>
-            </FeatureCard>
-            <FeatureCard>
-              <FeatureTitle>Custom Actions</FeatureTitle>
-              <FeatureDesc>Extensible action system for different operations</FeatureDesc>
-            </FeatureCard>
-          </FeatureGrid>
-        </Section>
-
-        <Divider />
-
-        <Section>
-          <SectionTitle>Status</SectionTitle>
-          <StatusGrid>
-            <StatusItem>
-              <StatusLabel>Status:</StatusLabel>
-              <StatusValue style={{ color: '#52c41a' }}>Ready</StatusValue>
-            </StatusItem>
-            <StatusItem>
-              <StatusLabel>Trigger Mode:</StatusLabel>
-              <StatusValue>Text Selection</StatusValue>
-            </StatusItem>
-          </StatusGrid>
-        </Section>
-      </Content>
-
-      <Footer>
-        <Space>
-          <Button
-            type="primary"
-            icon={<Settings size={16} />}
-            onClick={handleOpenSettings}
+      <Title>Selection Assistant Settings</Title>
+      <Card title="Widget Preview" style={{ marginBottom: 6 }}>
+      <WidgetPreviewWrapper>
+         <SelectionWidget
+           selectedText="This is how the selection widget will look"
+           onCopy={() => {}}
+           onExplain={() => {}}
+           onSummarize={() => {}}
+           onTranslate={() => {}}
+         />
+      </WidgetPreviewWrapper>
+    </Card>
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSave}
+        initialValues={settings || {}}
+      >
+        {/* General Settings */}
+        
+        <Card title="General Settings" style={{ marginBottom: 24 }}>
+          <Form.Item
+            name="triggerMode"
+            label="Trigger Mode"
+            rules={[{ required: true }]}
           >
-            Open Settings
-          </Button>
-          <Button onClick={handleCopyToClipboard} icon={<Copy size={16} />}>
-            Copy Test
-          </Button>
-        </Space>
-      </Footer>
+            <Select
+              options={[
+                { label: 'Text Selection', value: 'selection' },
+                { label: 'Ctrl Key', value: 'ctrlkey' },
+                { label: 'Custom Shortcut', value: 'shortcut' },
+              ]}
+            />
+          </Form.Item>
 
-      {selectedText && widgetPosition && (
-        <div style={{ position: 'absolute', left: widgetPosition.x, top: widgetPosition.y, zIndex: 1000 }}>
-          <SelectionWidget
-            selectedText={selectedText}
-            onCopy={handleCopyToClipboard}
-            onExplain={() => console.log('Explain action')}
-            onSummarize={() => console.log('Summarize action')}
-            onTranslate={() => console.log('Translate action')}
-          />
-        </div>
-      )}
+          <Form.Item
+            name="compactMode"
+            label="Compact Mode"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Form.Item
+            name="followToolbar"
+            label="Follow Toolbar Position"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Form.Item
+            name="rememberWindowSize"
+            label="Remember Window Size"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Form.Item
+            name="shortcutKey"
+            label="Custom Shortcut Key"
+          >
+            <Input placeholder="e.g., Ctrl+Shift+L" />
+          </Form.Item>
+
+          <Form.Item
+            name="filterMode"
+            label="Application Filter Mode"
+            rules={[{ required: true }]}
+          >
+            <Select
+              options={[
+                { label: 'Default (All apps)', value: 'default' },
+                { label: 'Whitelist (Only selected)', value: 'whitelist' },
+                { label: 'Blacklist (Exclude selected)', value: 'blacklist' },
+              ]}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="filterList"
+            label="Application Filter List"
+          >
+            <Input.TextArea
+              placeholder="Enter app names separated by commas&#10;e.g., cmd.exe, powershell.exe"
+              rows={3}
+            />
+          </Form.Item>
+        </Card>
+
+        {/* LM Studio Settings */}
+        <Card title="LM Studio Integration" style={{ marginBottom: 24 }}>
+          <Form.Item
+            name={['lmStudio', 'host']}
+            label="LM Studio Host"
+            rules={[{ required: true, message: 'Host is required' }]}
+          >
+            <Input placeholder="localhost" />
+          </Form.Item>
+
+          <Form.Item
+            name={['lmStudio', 'port']}
+            label="LM Studio Port"
+            rules={[{ required: true, message: 'Port is required' }]}
+          >
+            <Input type="number" placeholder="1234" />
+          </Form.Item>
+
+          <Form.Item
+            name={['lmStudio', 'apiPath']}
+            label="API Path"
+            rules={[{ required: true }]}
+          >
+            <Input placeholder="/v1" />
+          </Form.Item>
+
+          <Form.Item
+            name={['lmStudio', 'model']}
+            label="Model"
+          >
+            <Select
+              placeholder="Select a model or enter custom"
+              options={models.map(m => ({ label: m, value: m }))}
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              onClick={handleTestConnection}
+              loading={testingConnection}
+              type="primary"
+            >
+              Test Connection
+            </Button>
+          </Form.Item>
+
+          <ConnectionInfo>
+            <p>Connection string:</p>
+            <code>
+              {settings?.lmStudio &&
+                `http://${settings.lmStudio.host}:${settings.lmStudio.port}${settings.lmStudio.apiPath}`}
+            </code>
+          </ConnectionInfo>
+        </Card>
+
+         {/* Actions */}
+        <Form.Item>
+          <Space>
+            <Button type="primary" htmlType="submit">
+              Save Settings
+            </Button>
+             <Button onClick={() => navigate('/help')}>Help</Button>
+            <Button onClick={onClose}>Close</Button>
+          </Space>
+        </Form.Item>
+      </Form>
     </Container>
   )
 }
 
 const Container = styled.div`
-  display: flex;
-  flex-direction: column;
+  padding: 24px;
+  background: #fafafa;
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #333;
-`
-
-const Header = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  padding: 40px 20px;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
 `
 
 const Title = styled.h1`
-  margin: 0;
-  font-size: 32px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-`
-
-const Subtitle = styled.p`
-  margin: 8px 0 0 0;
-  font-size: 14px;
-  color: #999;
-`
-
-const Content = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: 40px 20px;
-  background: white;
-  margin: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-`
-
-const Section = styled.div`
   margin-bottom: 24px;
-`
-
-const SectionTitle = styled.h2`
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 600;
-  margin-bottom: 12px;
-  color: #333;
 `
 
-const SectionContent = styled.div`
-  font-size: 14px;
-  line-height: 1.6;
-  color: #666;
+const ConnectionInfo = styled.div`
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  border-left: 4px solid #1890ff;
 
   p {
-    margin-bottom: 12px;
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: #666;
   }
-`
 
-const StepList = styled.ol`
-  margin: 12px 0;
-  padding-left: 20px;
-
-  li {
-    margin-bottom: 8px;
+  code {
+    display: block;
+    padding: 8px;
+    background: #fff;
+    border-radius: 2px;
+    font-size: 12px;
+    word-break: break-all;
   }
-`
-
-const FeatureGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-`
-
-const FeatureCard = styled.div`
-  padding: 16px;
-  background: #f5f7fa;
-  border-radius: 6px;
-  border-left: 4px solid #667eea;
-`
-
-const FeatureTitle = styled.h4`
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-`
-
-const FeatureDesc = styled.p`
-  margin: 0;
-  font-size: 12px;
-  color: #666;
-`
-
-const StatusGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 16px;
-  padding: 16px;
-  background: #f5f7fa;
-  border-radius: 6px;
-`
-
-const StatusItem = styled.div`
-  display: flex;
-  flex-direction: column;
-`
-
-const StatusLabel = styled.span`
-  font-size: 12px;
-  color: #999;
-  margin-bottom: 4px;
-`
-
-const StatusValue = styled.span`
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-`
-
-const Footer = styled.div`
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.95);
-  border-top: 1px solid #e8e8e8;
-  text-align: center;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
 `

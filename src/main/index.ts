@@ -283,9 +283,9 @@ app.on('ready', () => {
     logger.error('Error initializing SelectionService:', error as Error)
   }
   
-  console.log('[MAIN] Creating settings window...')
-  createSettingsWindow()
-  logger.info('Settings window created')
+  console.log('[MAIN] Creating main window...')
+  createWindow()
+  logger.info('Main window created')
 })
 
 app.on('window-all-closed', () => {
