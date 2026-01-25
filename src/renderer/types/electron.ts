@@ -14,7 +14,6 @@ declare global {
         generateCompletionStream: (prompt: string, callback: (chunk: string) => void) => Promise<void>
       }
       window: {
-        openSettings: () => Promise<void>
         close: () => Promise<void>
         minimize: () => Promise<void>
         openResult: (options: any) => Promise<void>

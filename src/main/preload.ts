@@ -61,7 +61,6 @@ const api = {
     },
   },
   window: {
-    openSettings: (): Promise<void> => ipcRenderer.invoke('open-settings'),
     openResult: (options: any): Promise<void> =>
       ipcRenderer.invoke(IpcChannels.Window_OpenResult, options),
     closeResult: (): Promise<void> => ipcRenderer.invoke(IpcChannels.Window_CloseResult),

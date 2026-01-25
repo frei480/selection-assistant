@@ -25,14 +25,13 @@ import type { SettingsConfig, ResultWindowOptions } from '../shared/types'
 console.log('[MAIN] All imports loaded')
 
 let mainWindow: BrowserWindow | null = null
-let settingsWindow: BrowserWindow | null = null
 let resultWindow: BrowserWindow | null = null
 
 const createWindow = (): void => {
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 700,
-    minWidth: 600,
+    width: 700,
+    height: 600,
+    minWidth: 500,
     minHeight: 400,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -41,7 +40,7 @@ const createWindow = (): void => {
       sandbox: true,
     },
   })
-
+  mainWindow.setMenu(null)
   mainWindow.on('closed', () => {
     mainWindow = null
   })
@@ -63,40 +62,6 @@ const createWindow = (): void => {
   }
 }
 
-const createSettingsWindow = (): void => {
-  if (settingsWindow) {
-    settingsWindow.focus()
-    return
-  }
-
-  settingsWindow = new BrowserWindow({
-    width: 700,
-    height: 600,
-    minWidth: 500,
-    minHeight: 400,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-    },
-  })
-  settingsWindow.setMenu(null)
-  settingsWindow.on('closed', () => {
-    settingsWindow = null
-  })
-
-  const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'] || 'http://localhost:5173'
-
-  if (isDevelopment) {
-    settingsWindow.loadURL(`${VITE_DEV_SERVER_URL}/#/settings`)
-    //settingsWindow.webContents.openDevTools()
-  } else {
-    settingsWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
-      hash: '/settings',
-    })
-  }
-}
 
 const createResultWindow = (options: any): void => {
   console.log('[MAIN] createResultWindow called with options:', options)
@@ -222,11 +187,7 @@ const registerIpcHandlers = (): void => {
     }
   )
 
-  // Window handlers
-  ipcMain.handle('open-settings', () => {
-    createSettingsWindow()
-  })
-
+  
   ipcMain.handle('close-window', (event) => {
     const window = BrowserWindow.fromWebContents(event.sender)
     if (window) {
@@ -302,4 +263,4 @@ app.on('activate', () => {
   }
 })
 
-export { mainWindow, createSettingsWindow }
+export { mainWindow, /*createSettingsWindow*/ }

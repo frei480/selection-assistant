@@ -34,9 +34,6 @@ export const HelpPage: React.FC = () => {
     return () => document.removeEventListener('mouseup', handleMouseUp)
   }, [])
 
-  const handleOpenSettings = async () => {
-    await window.ipc.window.openSettings()
-  }
 
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText('Sample text')
