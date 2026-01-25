@@ -10,11 +10,12 @@
     "dev:main": "tsc --watch",
     "dev:vite": "cross-env NODE_ENV=development vite",
     "dev:electron": "cross-env NODE_ENV=development node scripts/wait-for-vite.js && cross-env NODE_ENV=development electron . --trace-warnings",
-    "build": "npm run build:vite && npm run build:main",
+    "build": "npm run build:vite && npm run build:main && npm run copy-assets",
     "build:vite": "vite build",
     "build:main": "tsc",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
+    "copy-assets": "copyfiles -u 1 src/main/assets/**/* dist",
     "start": "electron ."
   },
   "dependencies": {
@@ -45,6 +46,7 @@
     "@types/styled-components": "^5.1.26",
     "@vitejs/plugin-react": "^4.2.1",
     "concurrently": "^8.2.2",
+    "copyfiles": "^2.4.1",
     "cross-env": "^10.1.0",
     "electron": "^27.0.0",
     "jest": "^30.2.0",

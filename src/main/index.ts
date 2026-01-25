@@ -13,7 +13,7 @@ moduleAlias.addAliases({
 
 console.log('[MAIN] Path aliases registered')
 
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
 import { isDevelopment } from './utils'
 import { configManager } from './services/ConfigManager'
 import { logger } from './services/Logger'
@@ -26,6 +26,7 @@ console.log('[MAIN] All imports loaded')
 
 let mainWindow: BrowserWindow | null = null
 let resultWindow: BrowserWindow | null = null
+let tray: Tray | null = null
 
 const createWindow = (): void => {
   mainWindow = new BrowserWindow({
@@ -41,8 +42,15 @@ const createWindow = (): void => {
     },
   })
   mainWindow.setMenu(null)
-  mainWindow.on('closed', () => {
-    mainWindow = null
+  mainWindow.on('close', (event: Electron.Event) => {
+    if ((app as any).quitting) {
+      mainWindow = null
+    } else {
+      event.preventDefault()
+      if (mainWindow) {
+        mainWindow.hide()
+      }
+    }
   })
 
   const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'] || 'http://localhost:5173'
@@ -247,6 +255,48 @@ app.on('ready', () => {
   console.log('[MAIN] Creating main window...')
   createWindow()
   logger.info('Main window created')
+  
+  // Initialize tray icon
+  let iconPath = ''
+  if (isDevelopment) {
+    iconPath = path.join(__dirname, '../../src/main/assets/tray-icon.png')
+  } else {
+    iconPath = path.join(__dirname, 'assets/tray-icon.png')
+  }
+  console.log('[MAIN] Tray icon path:', iconPath)
+  console.log('[MAIN] Icon exists:', require('fs').existsSync(iconPath))
+  
+  try {
+    tray = new Tray(iconPath)
+    console.log('[MAIN] Tray icon created successfully')
+    
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'Show',
+        click: () => {
+          console.log('[MAIN] Show clicked from tray')
+          if (mainWindow) {
+            mainWindow.show()
+          }
+        }
+      },
+      {
+        label: 'Quit',
+        click: () => {
+          console.log('[MAIN] Quit clicked from tray')
+          ;(app as any).quitting = true
+          app.quit()
+        }
+      }
+    ])
+    
+    tray.setToolTip('Selection Assistant')
+    tray.setContextMenu(contextMenu)
+    console.log('[MAIN] Tray icon and menu set up successfully')
+  } catch (error) {
+    console.error('[MAIN] Error creating tray icon:', error)
+    logger.error('Error creating tray icon: ' + (error instanceof Error ? error.message : String(error)))
+  }
 })
 
 app.on('window-all-closed', () => {
