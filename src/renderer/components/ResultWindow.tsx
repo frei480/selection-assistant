@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Button, Space, Spin, message, Card, Empty } from 'antd'
 import { CopyOutlined } from '@ant-design/icons'
-import { ArrowLeft, Copy } from 'lucide-react'
+import { ArrowLeft, Copy, ChevronDown } from 'lucide-react'
 import styled from 'styled-components'
 import WindowFooter from './WindowFooter'
 
@@ -84,7 +84,7 @@ export const ResultWindow: React.FC<ResultWindowProps> = ({
     navigator.clipboard.writeText(content)
     message.success('Скопировано в буфер обмена')
   }
-
+  const [showOriginal, setShowOriginal] = useState(false)
   return (
     <ResultContainer>
       <ScrollableContent>
@@ -97,7 +97,29 @@ export const ResultWindow: React.FC<ResultWindowProps> = ({
             <h3>Исходный текст</h3>
             <p>{text}</p>
           </div> */}
-
+        <MenuContainer>
+          <OriginalHeader onClick={() => setShowOriginal(!showOriginal)}>
+            <span>
+              {showOriginal ? `Скрыть исходный текст` : `Показать исходный текст`}
+            </span>
+            <ChevronDown size={14} className={showOriginal ? 'expanded' : ''} />
+          </OriginalHeader>
+        </MenuContainer>
+        {showOriginal && (
+          <OriginalContent>
+            {text}
+            <OriginalContentCopyWrapper>
+            <Button
+            type="text"
+            size="small"
+            icon={<Copy size={14} />}
+            onClick={() => copyToClipboard(text)}
+          >
+            Копировать
+          </Button>
+            </OriginalContentCopyWrapper>
+          </OriginalContent>
+        )}
           <div className="content">
             {/* <h3>{actionTitles[action]}</h3> */}
             <p>{result}</p>
@@ -125,5 +147,47 @@ export const ResultWindow: React.FC<ResultWindowProps> = ({
     </ResultContainer>
   )
 }
+const MenuContainer = styled.div`
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+`
 
+const OriginalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+
+  &:hover {
+    color: var(--color-primary);
+  }
+
+  .lucide {
+    transition: transform 0.2s ease;
+    &.expanded {
+      transform: rotate(180deg);
+    }
+  }
+`
+const OriginalContent = styled.div`
+  padding: 8px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  background-color: var(--color-background-soft);
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  width: 100%;
+`
+const OriginalContentCopyWrapper = styled.div`
+  display: flex;
+  justify-content: flex-end;
+`
 export default ResultWindow
