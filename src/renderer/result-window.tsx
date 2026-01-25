@@ -4,7 +4,7 @@ import { Button, Space, Spin, message, Card } from 'antd'
 import { Copy, ChevronLeft } from 'lucide-react'
 import styled from 'styled-components'
 import type { ResultWindowOptions } from '../shared/types'
-import '../index.css'
+// import '../index.css'
 import './types/electron'
 
 const ResultContainer = styled.div`
@@ -141,9 +141,9 @@ const ResultWindow: React.FC = () => {
         </Space>
       </div>
 
-      {/* <Card className="content" title="Original Text" size="small">
+      { <Card className="content" title="Original Text" size="small">
         <p>{state.data.text}</p>
-      </Card> */}
+      </Card> }
 
       <Card className="content" title="Result" size="small">
         <p>{state.data.result}</p>
