@@ -3,6 +3,7 @@ import { Button, Space, Spin, message, Card, Empty } from 'antd'
 import { CopyOutlined } from '@ant-design/icons'
 import { ArrowLeft, Copy } from 'lucide-react'
 import styled from 'styled-components'
+import WindowFooter from './WindowFooter'
 
 const ResultContainer = styled.div`
   display: flex;
@@ -10,8 +11,16 @@ const ResultContainer = styled.div`
   height: 100%;
   padding: 20px;
   background: #f5f5f5;
-  overflow: auto;
+  position: relative;
+`
 
+const ScrollableContent = styled.div`
+  flex: 1;
+  overflow: auto;
+  padding-bottom: 50px; /* Space for footer */
+`
+
+const ContentWrapper = styled.div`
   .header {
     display: flex;
     justify-content: space-between;
@@ -78,33 +87,41 @@ export const ResultWindow: React.FC<ResultWindowProps> = ({
 
   return (
     <ResultContainer>
-      {/* <div className="actions">
-        <h2>{actionTitles[action]}</h2>
-      </div> */}
+      <ScrollableContent>
+        <ContentWrapper>
+          {/* <div className="actions">
+            <h2>{actionTitles[action]}</h2>
+          </div> */}
 
-      {/* <div className="content">
-        <h3>Исходный текст</h3>
-        <p>{text}</p>
-      </div> */}
+          {/* <div className="content">
+            <h3>Исходный текст</h3>
+            <p>{text}</p>
+          </div> */}
 
-      <div className="content">
-        {/* <h3>{actionTitles[action]}</h3> */}
-        <p>{result}</p>
-      </div>
+          <div className="content">
+            {/* <h3>{actionTitles[action]}</h3> */}
+            <p>{result}</p>
+          </div>
 
-      <div className="actions">
-        <Button
-          type="default"
-          size="middle"
-          icon={<CopyOutlined />}
-          onClick={() => copyToClipboard(result)}
-        >
-          Копировать
-        </Button>
-        <Button type="primary" danger onClick={onClose}>
-          Закрыть
-        </Button>
-      </div>
+          {/* <div className="actions">
+            <Button
+              type="default"
+              size="middle"
+              icon={<CopyOutlined />}
+              onClick={() => copyToClipboard(result)}
+            >
+              Копировать
+            </Button>
+            <Button type="primary" danger onClick={onClose}>
+              Закрыть
+            </Button>
+          </div> */}
+        </ContentWrapper>
+      </ScrollableContent>
+      <WindowFooter
+        content={result}
+        onClose={onClose}
+      />
     </ResultContainer>
   )
 }
